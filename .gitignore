@@ -1,0 +1,11 @@
+# Raw WRDS data are licensed - never push them to GitHub
+Data/
+# Outputs are re-created by run_all.py (tables, figures, intermediate files)
+results/
+# Local helper to push to GitHub
+push_to_github.bat
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store
+~$*
