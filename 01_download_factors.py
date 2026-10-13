@@ -11,7 +11,6 @@ Run:  python 01_download_factors.py
 """
 import io
 import re
-import sys
 import zipfile
 import urllib.request
 from datetime import date
@@ -128,4 +127,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

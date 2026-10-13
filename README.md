@@ -23,7 +23,8 @@ $$\text{Score} = z\!\left(\frac{R\&D}{ME}\right) + z\!\left(\frac{OIBDP + R\&D}{
 
 ## How to run
 
-1. Put the raw data in `Data/` (not on GitHub, WRDS data are licensed):
+1. After cloning, copy the raw WRDS files into the `Data/` folder, with exactly these names
+   (they are not on GitHub because WRDS data are licensed):
    - `Prix 1.csv` (CRSP monthly)
    - `Fundamentals.csv` (Compustat annual)
    - optionally `ccm_link.csv` (link table)
