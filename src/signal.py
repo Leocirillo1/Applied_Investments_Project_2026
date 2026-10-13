@@ -1,4 +1,4 @@
-"""The RDV signal and the benchmark B, computed within each June cross-section only."""
+"""The RDV signal, computed within each June cross-section only."""
 from __future__ import annotations
 
 import numpy as np
@@ -22,8 +22,8 @@ def rdv_inputs(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def score_and_sort(g: pd.DataFrame, n_port: int, winsor: float, nyse_bp: bool = True) -> pd.DataFrame:
-    """One formation year: z-scores, RDV score (equal weights; missing eyr/dopr -> z = 0),
-    RDV portfolios and benchmark B portfolios (sorted on rdm)."""
+    """One formation year: z-scores, RDV score (equal weights; missing eyr/dopr -> z = 0)
+    and RDV portfolios (NYSE breakpoints)."""
     g = g.copy()
     g["z_rdm"] = zscore(winsorize(g["rdm"], winsor))
     g["z_eyr"] = zscore(winsorize(g["eyr"], winsor)).fillna(0)
@@ -31,7 +31,6 @@ def score_and_sort(g: pd.DataFrame, n_port: int, winsor: float, nyse_bp: bool = 
     g["score_RDV"] = g["z_rdm"] + g["z_eyr"] + g["z_dopr"]
     nyse = g["exch"] == "N"
     g["port_RDV"] = quantile_sort(g["score_RDV"], nyse, n_port, nyse_bp)
-    g["port_B"] = quantile_sort(g["rdm"], nyse, n_port, nyse_bp)
     return g
 
 

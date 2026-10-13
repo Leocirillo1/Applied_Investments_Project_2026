@@ -1,7 +1,7 @@
 """
 Step 8 - Figures for the paper and the investment-committee presentation (PNG, 300 dpi).
 
-fig1_cumulative_long_short.png    growth of $1: RDV Q5-Q1 (gross, net of costs) and benchmark B
+fig1_cumulative_long_short.png    growth of $1: RDV Q5-Q1 (gross and net of trading costs)
 fig2_cumulative_quintiles_VW.png  growth of $1 in each RDV quintile (VW) and the market
 fig3_mean_excess_returns.png      average monthly excess return by quintile (VW | EW)
 fig4_alpha_by_model.png           Q5-Q1 alpha and 95% CI under the 7 factor models (VW, EW)
@@ -49,10 +49,10 @@ def main():
     rets = load_df(C.DATA_PROC / "portfolio_returns")
     piv = lambda s, w: rets[(rets.signal == s) & (rets.weighting == w)].pivot(  # noqa: E731
         index="date", columns="portfolio", values="ret")
-    vw, ew, bvw = piv(C.STRATEGY, "VW"), piv(C.STRATEGY, "EW"), piv(C.BENCHMARK, "VW")
+    vw, ew = piv(C.STRATEGY, "VW"), piv(C.STRATEGY, "EW")
     fac = load_factors()
     idx = common_sample(vw.dropna().index, fac)
-    vw, ew, bvw = vw.loc[idx], ew.loc[idx], bvw.loc[idx]
+    vw, ew = vw.loc[idx], ew.loc[idx]
     span = f"{idx.min():%Y-%m} to {idx.max():%Y-%m}"
 
     # 1. cumulative long-short
@@ -62,12 +62,11 @@ def main():
     if net_path.exists():
         net = pd.read_csv(net_path, parse_dates=["date"], index_col="date")["net_LS"].reindex(idx).fillna(0)
         ax.plot((1 + net).cumprod(), color=BLUE, linewidth=1.1, linestyle="--", label="RDV, net of costs")
-    ax.plot((1 + bvw[LS]).cumprod(), color=GREY, linewidth=1.2, label="Benchmark B (R&D-to-market)")
     ax.set_yscale("log")
     ax.axhline(1, color=GREY, linewidth=0.8)
     ax.set_title(f"{name}\n{LS}, value-weighted: growth of $1, {span}")
     ax.set_ylabel("Value of $1 (log scale)")
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.08), ncol=3)
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.08), ncol=2)
     save(fig, "fig1_cumulative_long_short.png")
 
     # 2. cumulative quintiles VW

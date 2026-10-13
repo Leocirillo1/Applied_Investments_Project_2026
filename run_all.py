@@ -26,6 +26,20 @@ STEPS = [
 ]
 
 
+def check_packages() -> bool:
+    """Fail fast (before a 5-minute run) if a required package is missing."""
+    import importlib.util
+    needed = ["pandas", "numpy", "scipy", "statsmodels", "matplotlib", "openpyxl"]
+    missing = [m for m in needed if importlib.util.find_spec(m) is None]
+    if missing:
+        print("\n" + "!" * 78)
+        print("Missing Python packages: " + ", ".join(missing))
+        print("Install them in the Python used to run this project, from the project folder:")
+        print(f'   "{sys.executable}" -m pip install -r requirements.txt')
+        print("!" * 78)
+    return not missing
+
+
 def check_raw_data() -> bool:
     """The WRDS files are not on GitHub: each user must copy them into Data/ once."""
     import config as C
@@ -41,6 +55,19 @@ def check_raw_data() -> bool:
         print("Then run run_all.py again.")
         print("!" * 78)
     return not missing
+
+
+def clear_outputs(C):
+    """A full run rebuilds every table and figure: remove old ones first, so that no stale
+    file from an earlier version of the code stays in results/."""
+    n = 0
+    for folder, patterns in ((C.OUT_TABLES, ("*.csv", "*.xlsx", "*.txt")), (C.OUT_FIGURES, ("*.png",))):
+        for pat in patterns:
+            for f in folder.glob(pat):
+                f.unlink()
+                n += 1
+    if n:
+        print(f"Removed {n} old result files from results/tables and results/figures.")
 
 
 def run_step(path: Path):
@@ -62,8 +89,12 @@ def main():
     factors_file = C.DATA_FACTORS / "factors_monthly.csv"
     # step 1 runs when asked, and always when the factor file is missing (e.g. a fresh clone)
     download = (args.start <= 1 and not args.skip_download) or not factors_file.exists()
+    if not check_packages():
+        sys.exit(1)
     if args.start <= 3 and not check_raw_data():
         sys.exit(1)
+    if args.start <= 2:
+        clear_outputs(C)
     t_all = time.time()
     for i, step in enumerate(STEPS, start=1):
         if (i == 1 and not download) or (i > 1 and i < args.start):

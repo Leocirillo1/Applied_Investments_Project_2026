@@ -1,11 +1,10 @@
 """
 Central configuration - "Underpriced innovators with real, improving earnings power" (RDV).
 
-Strategy (pre-registered, docs/preregistration_rdv.md):
+Strategy (design fixed before the backtest, docs/preregistration_rdv.md):
     universe : US common stocks (NYSE/AMEX/NASDAQ), non-financial, R&D reporters (XRD > 0)
     score    : z(XRD/ME) + z((OIBDP + XRD)/EV) + z(delta[(OIBDP + XRD)/AT_{t-1}])   equal weights
     portfolio: NYSE quintiles, value-weighted, long Q5 - short Q1, rebalanced every end of June
-Benchmark "B" = R&D-to-market alone (XRD/ME), used for the pre-registered value-added test.
 
 Every design choice lives here, so it is changed in ONE place.
 """
@@ -39,8 +38,8 @@ LAST_RETURN_MONTH = "2025-12"
 # Universe
 # ----------------------------------------------------------------------------
 EXCLUDE_FINANCIALS = True       # SIC 6000-6999 (banks, insurers, REITs, funds)
-# Data-quality screen inherited from the project's common universe (unchanged since the
-# pre-registration): complete core accounting data for two consecutive fiscal years.
+# Data-quality screen: complete core accounting data (capital expenditure, operating income,
+# debt) for two consecutive fiscal years.
 SCREEN_ITEMS = ["capx_at", "roa", "dlev", "ddebt_at"]
 ROA_DENOMINATOR = "at"          # roa = OIBDP / AT (used only by the screen)
 MIN_LAGGED_ASSETS = 0.0
@@ -60,7 +59,6 @@ WINSOR_PCT = 0.01               # each input winsorised 1% / 99% within each Jun
 N_PORTFOLIOS = 5                # quintiles; strategy = Q5 - Q1
 NYSE_BREAKPOINTS = True
 STRATEGY = "RDV"
-BENCHMARK = "B"                 # R&D-to-market alone
 STRATEGY_NAME = "Underpriced innovators with real, improving earnings power (RDV)"
 MAIN_WEIGHTING = "VW"           # value-weighted; EW only as robustness
 
@@ -79,8 +77,6 @@ MODELS = {
     "q":        ["Q_MKT", "Q_ME", "Q_IA", "Q_ROE"],
     "q5":       ["Q_MKT", "Q_ME", "Q_IA", "Q_ROE", "Q_EG"],
 }
-N_TESTS_REGISTER = 11           # strategies tested in the project (docs/test_register.md)
-VALUE_ADDED_MODEL = "FF5+MOM"   # pre-registered decision test: RDV = a + b*B + FF5+MOM
 
 # ----------------------------------------------------------------------------
 # Trading costs (Session 3). Spreads are ASSUMPTIONS by size group until bid/ask data

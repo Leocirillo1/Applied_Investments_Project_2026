@@ -1,5 +1,5 @@
 """
-Step 5 - Monthly returns of the RDV quintiles, the RDV long-short strategy and the benchmark B.
+Step 5 - Monthly returns of the RDV quintiles and of the RDV long-short strategy.
 
 Portfolios formed at the end of June of year t are held July t - June t+1 (annual rebalancing).
   * VW return: weights = previous month-end market cap (= buy-and-hold within the year)
@@ -7,7 +7,7 @@ Portfolios formed at the end of June of year t are held July t - June t+1 (annua
 A delisted stock keeps its last CRSP return (CIZ returns include the delisting return).
 
 Outputs (results/processed/ and results/tables/):
-  portfolio_returns.parquet         long: signal (RDV / B), weighting, portfolio, date, ret, n
+  portfolio_returns.parquet         long: signal, weighting, portfolio, date, ret, n
   portfolio_returns_wide.csv        one column per signal_weighting_portfolio
   quintile_characteristics_RDV.csv  time-series averages of yearly medians/means by quintile
   sector_weights_RDV.csv            average Fama-French 12 weights of the long (Q5) and short (Q1) legs
@@ -27,7 +27,7 @@ def main():
     panel = load_df(C.DATA_PROC / "formation_panel")
 
     out = []
-    for s in (C.STRATEGY, C.BENCHMARK):
+    for s in (C.STRATEGY,):
         hr = holding_returns(crsp, panel, f"port_{s}", C.FORMATION_MONTH)
         n = hr.pivot(index="date", columns="port", values="n")
         n.columns = [f"Q{int(c)}" for c in n.columns]

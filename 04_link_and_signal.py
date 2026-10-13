@@ -1,6 +1,6 @@
 """
 Step 4 - Link Compustat to CRSP, build the June universe, compute the RDV signal and assign
-stocks to NYSE-breakpoint quintiles (plus the benchmark B = R&D-to-market).
+stocks to NYSE-breakpoint quintiles.
 
 Formation at the end of June of year t uses ONLY information available at that date:
   * accounting data: fiscal year ending in calendar year t-1 (>= 6 months old, asserted)
@@ -144,7 +144,7 @@ def main():
     keep = ["permno", "permco", "gvkey", "conm", "formation_year", "formation_date", "datadate",
             "me_june", "prc", "exch", "siccd", "ff12", "at", "at_lag", "xrd", "oibdp", "dlc", "dltt",
             "che", "lev", "rd_at", "asset_growth", "opr", "d_opr", "rdm", "eyr", "dopr",
-            "z_rdm", "z_eyr", "z_dopr", "score_RDV", "port_RDV", "port_B"]
+            "z_rdm", "z_eyr", "z_dopr", "score_RDV", "port_RDV"]
     panel = panel[keep]
     path = save_df(panel, C.DATA_PROC / "formation_panel")
 

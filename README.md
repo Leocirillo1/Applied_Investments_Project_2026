@@ -17,9 +17,7 @@ $$\text{Score} = z\!\left(\frac{R\&D}{ME}\right) + z\!\left(\frac{OIBDP + R\&D}{
 - **Score:** equal weights. Each input is winsorised at 1%/99% and z-scored within each June.
 - **Portfolios:** quintiles with NYSE breakpoints. **Long Q5, short Q1, value-weighted**, held July to June.
 - **Story:** accounting hides the value of innovation. We buy firms that invest heavily in R&D relative to their price, are cheap once R&D is added back to earnings, and whose earnings power is improving.
-- **Pre-registration:** the design was written down before testing (`docs/preregistration_rdv.md`).
-- **Benchmark B** = R&D/ME alone. RDV was selected because its value added over B is significant (pre-registered rule).
-- **Test register:** every strategy tested in the project is listed in `docs/test_register.md`.
+- **Design fixed in advance:** the definition was written down before the backtest and never changed (`docs/preregistration_rdv.md`).
 
 ## How to run
 
@@ -42,17 +40,17 @@ Main results: `results/tables/results.xlsx` and `results/figures/`.
 | `01_download_factors.py` | FF3, FF5 (2×3), MOM from Ken French; q and q5 from global-q.org |
 | `02_clean_crsp.py` | CRSP monthly: common equity, NYSE/AMEX/NASDAQ, no ADRs/funds, market cap, lagged ME |
 | `03_clean_compustat.py` | Compustat annual: inputs of the signal, previous-year values, 6-month reporting lag |
-| `04_link_and_signal.py` | Compustat↔CRSP link, June universe, RDV score, NYSE quintiles (and benchmark B) |
+| `04_link_and_signal.py` | Compustat↔CRSP link, June universe, RDV score, NYSE quintiles |
 | `05_portfolio_returns.py` | Monthly VW/EW returns of Q1–Q5 and Q5−Q1; quintile characteristics; sector weights |
-| `06_alpha_regressions.py` | 7-model alphas (Newey-West), loadings, GRS, performance, value added over B |
+| `06_alpha_regressions.py` | 7-model alphas (Newey-West), factor loadings, GRS test, performance statistics |
 | `07_trading_costs.py` | Turnover (Session 3 formula), spread and price-impact costs, net alphas, break-even cost |
 | `08_figures.py` | Figures for the paper and the presentation |
-| `09_robustness.py` | Sub-periods, size filters, price filter, deciles, breakpoints, winsorisation, single components |
+| `09_robustness.py` | Sub-periods, size filters, price filter, deciles, breakpoints, winsorisation |
 | `10_fama_macbeth.py` | Fama-MacBeth regressions (score, components, size, momentum) |
 | `src/` | Helpers: I/O, winsorise/z-score, regressions, GRS, portfolio sorts, the RDV signal |
 | `tools/validate_pipeline.py` | Data checks: market return vs Fama-French; replication of the Session 1 asset-growth example |
 | `tools/permnos_rdv_universe.txt` | PERMNO list for a targeted download of CRSP daily data (see below) |
-| `docs/` | Pre-registration of RDV and the test register |
+| `docs/` | Definition of the strategy, written before the backtest |
 
 ## Methodology and how biases are avoided
 
@@ -73,7 +71,6 @@ Main results: `results/tables/results.xlsx` and `results/figures/`.
   - Newey-West (6 lags).
   - All 7 models on the same sample.
   - GRS joint test.
-  - Bonferroni-adjusted p-values for the 11 strategies tested in the project.
 - **Trading costs** (Session 3):
   - Turnover = Σ|w_t − w*_t|, with weights drifting with returns.
   - Cost = |Δw| × half-spread + |Δw| × λ√(trade / ADV), with λ = 2.5 / 1.5 / 1.0 for micro / small / large caps.

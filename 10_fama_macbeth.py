@@ -5,8 +5,7 @@ Each month t (July y to June y+1), regress individual returns (%) of the RDV uni
 characteristics known at the end of June y (momentum: known at the end of month t-1):
   (1) RDV score
   (2) RDV score + log(ME) + momentum(12-2)
-  (3) the three z-scored inputs + log(ME) + momentum
-  (4) z(R&D/ME) (benchmark B) + log(ME) + momentum
+  (3) the three z-scored inputs of the score + log(ME) + momentum
 Regressors winsorised 1/99% each month; t-stats from Newey-West standard errors of the monthly
 coefficient series.  Output: results/tables/fama_macbeth_RDV.csv
 """
@@ -59,7 +58,6 @@ def main():
         "(1) RDV score": ["score_RDV"],
         "(2) RDV score + size + mom": ["score_RDV", "log_me", "mom"],
         "(3) components + size + mom": ["z_rdm", "z_eyr", "z_dopr", "log_me", "mom"],
-        "(4) R&D/ME (B) + size + mom": ["z_rdm", "log_me", "mom"],
     }
     out = pd.DataFrame({name: fm(d, xs) for name, xs in specs.items()})
     out.to_csv(C.OUT_TABLES / "fama_macbeth_RDV.csv")
