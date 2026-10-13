@@ -4,5 +4,5 @@ call "%USERPROFILE%\anaconda3\Scripts\activate.bat" "%USERPROFILE%\anaconda3"
 cd /d "%~dp0.."
 python run_all.py --skip-download
 echo.
-echo Finished. Results are in output\tables and output\figures. You can close this window.
+echo Finished. Results are in results\tables and results\figures. You can close this window.
 pause
