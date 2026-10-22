@@ -23,8 +23,10 @@ OUT_FIGURES = RESULTS / "figures"
 
 CRSP_FILE = DATA_RAW / "Prix 1.csv"            # CRSP v2 (CIZ) monthly stock file
 COMPUSTAT_FILE = DATA_RAW / "Fundamentals.csv" # Compustat Fundamentals Annual
-CCM_LINK_FILE = DATA_RAW / "ccm_link.csv"      # CRSP/Compustat link table (optional, recommended)
-# Without CCM_LINK_FILE, Compustat is linked to CRSP by CUSIP (point-in-time, see step 4).
+CCM_LINK_FILE = DATA_RAW / "ccm_link.csv"      # CRSP/Compustat Merged link table (required)
+# Compustat is linked to CRSP with the official CCM link table (LINKTYPE LU/LC, LINKPRIM P/C, link
+# valid at the fiscal year-end). Set REQUIRE_CCM_LINK = False only to fall back to a CUSIP link.
+REQUIRE_CCM_LINK = True
 
 # ----------------------------------------------------------------------------
 # Sample

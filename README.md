@@ -25,7 +25,7 @@ $$\text{Score} = z\!\left(\frac{R\&D}{ME}\right) + z\!\left(\frac{OIBDP + R\&D}{
    (they are not on GitHub because WRDS data are licensed):
    - `Prix 1.csv` (CRSP monthly)
    - `Fundamentals.csv` (Compustat annual)
-   - optionally `ccm_link.csv` (link table)
+   - `ccm_link.csv` (CRSP/Compustat Merged link table, see "Data to download" below)
 2. Install packages once: `pip install -r requirements.txt`.
 3. Run `python run_all.py`, or double-click `tools/run_all.bat` (about 2–3 minutes).
    - After changing `config.py`: `python run_all.py --from 4 --skip-download`.
@@ -49,7 +49,7 @@ Main results: `results/tables/results.xlsx` and `results/figures/`.
 | `10_fama_macbeth.py` | Fama-MacBeth regressions (score, components, size, momentum) |
 | `src/` | Helpers: I/O, winsorise/z-score, regressions, GRS, portfolio sorts, the RDV signal |
 | `tools/validate_pipeline.py` | Data checks: market return vs Fama-French; replication of the Session 1 asset-growth example |
-| `tools/permnos_rdv_universe.txt` | PERMNO list for a targeted download of CRSP daily data (see below) |
+| `tools/permnos_rdv_universe.txt` | PERMNOs of the RDV universe, for a smaller download of CRSP daily data (see below) |
 | `docs/` | Definition of the strategy, written before the backtest |
 
 ## Methodology and how biases are avoided
@@ -61,6 +61,7 @@ Main results: `results/tables/results.xlsx` and `results/figures/`.
   - Monthly value weights use the previous month-end market cap.
 - **Universe.**
   - US common stocks (CRSP v2/CIZ `SecurityType = EQTY`, no ADRs) listed on NYSE, AMEX or NASDAQ in the month considered.
+  - Compustat linked to CRSP with the official CRSP/Compustat Merged link table (link types LU/LC, primary links P/C, link valid at the fiscal year-end).
   - Financials (SIC 6000–6999) excluded.
   - Complete core accounting data required (two consecutive fiscal years).
   - **R&D reporters only:** missing R&D is never treated as zero.
@@ -81,19 +82,25 @@ Main results: `results/tables/results.xlsx` and `results/figures/`.
 - Value-weighted return of the cleaned CRSP universe vs the Fama-French market: correlation 0.999 (1967–2025).
 - Session 1 asset-growth example: VW 10−1 = −0.34%/month (slides −0.26%), EW −0.99% (slides −0.85%).
 
-## Data to download at WRDS (to improve the data and the cost estimates)
+## Data to download at WRDS
 
-1. **CRSP/Compustat Merged → Compustat CRSP Link** → `Data/ccm_link.csv`
-   - Variables: GVKEY, LPERMNO, LPERMCO, LINKTYPE, LINKPRIM, LIID, LINKDT, LINKENDDT.
-   - The official link replaces the CUSIP fallback, which misses about 6–30% of market cap. Used automatically.
+**Required** (with `Prix 1.csv` and `Fundamentals.csv`):
+
+1. **CRSP → CRSP/Compustat Merged → Linking Table** → `Data/ccm_link.csv`
+   - Company codes: search the entire database. Variables: GVKEY, LPERMNO, LPERMCO, LINKTYPE, LINKPRIM, LIID, LINKDT, LINKENDDT.
+   - Output: comma-delimited (.csv), dates YYYY-MM-DD. Step 4 stops with a clear message if the file is missing.
+
+**To improve the data and the cost estimates** (not used yet by the code):
+
 2. **CRSP Stock v2 (CIZ) → Monthly Stock File**: add
    - `ShareType, SecuritySubType, USIncFlg, IssuerType, ConditionalType, TradingStatusFlg`: exact legacy share-code 10/11 and exchange filters.
    - `MthRetx`: price return without dividends, used in the Session 3 turnover formula.
 3. **CRSP Stock v2 (CIZ) → Delisting Information (StkDelists)**: `PERMNO, DelistingDt, DelActionType, DelReasonType, DelStatusType, DelPaymentType, DelRet`.
    - Lets us check delisting returns and apply a Shumway-type correction when a performance-related delisting has no return.
 4. **CRSP Stock v2 (CIZ) → Daily Stock File** (for prof-style transaction costs):
-   - Variables: `PERMNO, DlyCalDt, DlyPrc, DlyBid, DlyAsk, DlyHigh, DlyLow, DlyVol`, from 1974 to 2025.
-   - To keep the file small, upload `tools/permnos_rdv_universe.txt` as the company list (8,663 PERMNOs).
+   - Variables: `PERMNO, DlyCalDt, DlyPrc, DlyPrcFlg, DlyBid, DlyAsk, DlyHigh, DlyLow, DlyVol`, from 1974 to 2025, gzip-compressed csv.
+   - Company codes: the entire database (simplest), or upload `tools/permnos_rdv_universe.txt` (the stocks of the RDV universe) to keep the files smaller.
+   - Split the dates into about 10-year queries and save them as `Data/crsp_daily_1.csv.gz`, `crsp_daily_2.csv.gz`, …
    - Use: closing bid/ask quoted spreads where they exist (NASDAQ from the 1980s, NYSE/AMEX from the 1990s), as in the slides.
    - Use: high/low spread estimates (Corwin-Schultz 2012; Abdi-Ranaldo 2017) for the other months; remaining gaps filled with size-group means, the professor's method.
    - Use: average daily dollar volume for the price-impact term.
@@ -106,6 +113,6 @@ Main results: `results/tables/results.xlsx` and `results/figures/`.
 
 ## Known limitations
 
-- The Compustat↔CRSP link is CUSIP-based until `ccm_link.csv` is added.
 - Spreads are assumed by size group until the daily bid/ask data are added.
-- The alpha is weaker after 2000: FF5+MOM 0.31%/month (t 1.8) vs 0.66 (t 3.4) over 1975–1999.
+- The alpha is weaker after 2000: FF5+MOM 0.28%/month (t 1.6) vs 0.60 (t 2.9) over 1975–1999.
+- The alpha is smaller and not significant among large caps only (FF5+MOM 0.23%/month, t 1.8).

@@ -7,7 +7,7 @@ Formation at the end of June of year t uses ONLY information available at that d
   * market data:     CRSP June t (market cap, exchange, SIC code)
   * winsorisation, z-scores and NYSE breakpoints use only the June-t cross-section.
 
-Universe: US common stocks NYSE/AMEX/NASDAQ linked to Compustat, non-financial, complete core
+Universe: US common stocks NYSE/AMEX/NASDAQ linked to Compustat (CCM link table), non-financial, complete core
 accounting data (config.SCREEN_ITEMS), R&D reporters (XRD > 0; missing R&D is never set to 0).
 
 RDV score = z(XRD/ME) + z((OIBDP+XRD)/EV) + z(delta[(OIBDP+XRD)/AT_{t-1}])   (equal weights)
@@ -101,8 +101,11 @@ def main():
     if C.CCM_LINK_FILE.exists():
         link_method = "CCM link table"
         m = link_ccm(cs)
+    elif C.REQUIRE_CCM_LINK:
+        raise FileNotFoundError(f"{C.CCM_LINK_FILE} not found. Download the CRSP/Compustat Merged "
+                                "link table (see README) or set REQUIRE_CCM_LINK = False in config.py.")
     else:
-        link_method = "CUSIP (fallback - download ccm_link.csv for the official link)"
+        link_method = "CUSIP (fallback, REQUIRE_CCM_LINK = False)"
         m = link_cusip(cs, june)
     print("Link method:", link_method)
 
