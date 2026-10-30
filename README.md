@@ -27,7 +27,7 @@ $$\text{Score} = z\!\left(\frac{R\&D}{ME}\right) + z\!\left(\frac{OIBDP + R\&D}{
    - `Fundamentals.csv` (Compustat annual)
    - `ccm_link.csv` (CRSP/Compustat Merged link table, see "Data to download" below)
 2. Install packages once: `pip install -r requirements.txt`.
-3. Run `python run_all.py`, or double-click `tools/run_all.bat` (about 2–3 minutes).
+3. Run `python run_all.py` (about 2–3 minutes).
    - After changing `config.py`: `python run_all.py --from 4 --skip-download`.
 
 Main results: `results/tables/results.xlsx` and `results/figures/`.
@@ -48,8 +48,7 @@ Main results: `results/tables/results.xlsx` and `results/figures/`.
 | `09_robustness.py` | Sub-periods, size filters, price filter, deciles, breakpoints, winsorisation |
 | `10_fama_macbeth.py` | Fama-MacBeth regressions (score, components, size, momentum) |
 | `src/` | Helpers: I/O, winsorise/z-score, regressions, GRS, portfolio sorts, the RDV signal |
-| `tools/validate_pipeline.py` | Data checks: market return vs Fama-French; replication of the Session 1 asset-growth example |
-| `tools/permnos_rdv_universe.txt` | PERMNOs of the RDV universe, for a smaller download of CRSP daily data (see below) |
+| `tools/validate_pipeline.py` | Data check: value-weighted return of the cleaned CRSP universe vs the Fama-French market |
 | `docs/` | Definition of the strategy, written before the backtest |
 
 ## Methodology and how biases are avoided
@@ -80,7 +79,6 @@ Main results: `results/tables/results.xlsx` and `results/figures/`.
 ## Validation checks (`python tools/validate_pipeline.py`)
 
 - Value-weighted return of the cleaned CRSP universe vs the Fama-French market: correlation 0.999 (1967–2025).
-- Session 1 asset-growth example: VW 10−1 = −0.34%/month (slides −0.26%), EW −0.99% (slides −0.85%).
 
 ## Data to download at WRDS
 
@@ -90,26 +88,12 @@ Main results: `results/tables/results.xlsx` and `results/figures/`.
    - Company codes: search the entire database. Variables: GVKEY, LPERMNO, LPERMCO, LINKTYPE, LINKPRIM, LIID, LINKDT, LINKENDDT.
    - Output: comma-delimited (.csv), dates YYYY-MM-DD. Step 4 stops with a clear message if the file is missing.
 
-**To improve the data and the cost estimates** (not used yet by the code):
+**Next step, for the trading costs** (not used yet by the code):
 
-2. **CRSP Stock v2 (CIZ) → Monthly Stock File**: add
-   - `ShareType, SecuritySubType, USIncFlg, IssuerType, ConditionalType, TradingStatusFlg`: exact legacy share-code 10/11 and exchange filters.
-   - `MthRetx`: price return without dividends, used in the Session 3 turnover formula.
-3. **CRSP Stock v2 (CIZ) → Delisting Information (StkDelists)**: `PERMNO, DelistingDt, DelActionType, DelReasonType, DelStatusType, DelPaymentType, DelRet`.
-   - Lets us check delisting returns and apply a Shumway-type correction when a performance-related delisting has no return.
-4. **CRSP Stock v2 (CIZ) → Daily Stock File** (for prof-style transaction costs):
-   - Variables: `PERMNO, DlyCalDt, DlyPrc, DlyPrcFlg, DlyBid, DlyAsk, DlyHigh, DlyLow, DlyVol`, from 1974 to 2025, gzip-compressed csv.
-   - Company codes: the entire database (simplest), or upload `tools/permnos_rdv_universe.txt` (the stocks of the RDV universe) to keep the files smaller.
+2. **CRSP Stock v2 (CIZ) → Daily Stock File**
+   - Variables: `PERMNO, DlyCalDt, DlyPrc, DlyPrcFlg, DlyBid, DlyAsk, DlyHigh, DlyLow, DlyVol`, from 1974 to 2025, entire database, gzip-compressed csv.
    - Split the dates into about 10-year queries and save them as `Data/crsp_daily_1.csv.gz`, `crsp_daily_2.csv.gz`, …
-   - Use: closing bid/ask quoted spreads where they exist (NASDAQ from the 1980s, NYSE/AMEX from the 1990s), as in the slides.
-   - Use: high/low spread estimates (Corwin-Schultz 2012; Abdi-Ranaldo 2017) for the other months; remaining gaps filled with size-group means, the professor's method.
-   - Use: average daily dollar volume for the price-impact term.
-5. **Compustat Fundamentals Annual**: add
-   - `RDIP` (in-process R&D written off at acquisitions; to be removed from XRD before 2009);
-   - `OIADP, DP` (EBIT version of the earnings yield);
-   - `CEQ, SEQ, TXDITC, PSTK, PSTKRV, PSTKL` (book equity: book-to-market control);
-   - `SICH` (historical SIC).
-6. *Optional:* **WRDS Intraday Indicators** (TAQ-based effective spreads, 1993+) give exact effective spreads for the recent period.
+   - Use: closing bid/ask quoted spreads where they exist, high/low spread estimates (Corwin-Schultz 2012; Abdi-Ranaldo 2017) for the other months, remaining gaps filled with size-group means (the professor's method), and average daily dollar volume for the price-impact term.
 
 ## Known limitations
 

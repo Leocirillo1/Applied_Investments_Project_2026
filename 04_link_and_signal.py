@@ -28,7 +28,7 @@ from src.utils import load_df, save_df
 # Linking
 # ----------------------------------------------------------------------------
 def link_ccm(cs: pd.DataFrame) -> pd.DataFrame:
-    """Official CRSP/Compustat Merged link table (preferred)."""
+    """Official CRSP/Compustat Merged link table."""
     lk = pd.read_csv(C.CCM_LINK_FILE, dtype=str)
     lk.columns = [c.lower() for c in lk.columns]
     lk = lk.rename(columns={"lpermno": "permno"})
@@ -43,27 +43,6 @@ def link_ccm(cs: pd.DataFrame) -> pd.DataFrame:
     m = m[(m["datadate"] >= m["linkdt"]) & (m["datadate"] <= m["linkenddt"])]
     m["link_priority"] = np.where(m["linkprim"] == "P", 0, 1)
     return m.drop(columns=["linkdt", "linkenddt", "linkprim"])
-
-
-def link_cusip(cs: pd.DataFrame, june: pd.DataFrame) -> pd.DataFrame:
-    """Fallback: point-in-time CUSIP link on the June formation cross-section.
-    Priority 0: Compustat CUSIP (8) = CRSP historical CUSIP at June t or header CUSIP.
-    Priority 1: same 6-digit issuer code (other share class / re-issued security)."""
-    j = june[["permno", "formation_year", "cusip8", "hdrcusip8"]]
-    cands = []
-    for col in ["cusip8", "hdrcusip8"]:
-        a = cs.merge(j, left_on=["formation_year", "cusip8"],
-                     right_on=["formation_year", col], suffixes=("", "_crsp"))
-        a["link_priority"] = 0
-        cands.append(a)
-        k = j.assign(c6=j[col].str[:6])
-        b = cs.assign(c6=cs["cusip8"].str[:6]).merge(
-            k, on=["formation_year", "c6"], suffixes=("", "_crsp"))
-        b["link_priority"] = 1
-        cands.append(b)
-    m = pd.concat(cands, ignore_index=True)
-    m = m.drop(columns=[c for c in m.columns if c.endswith("_crsp") or c == "c6"])
-    return m
 
 
 def ff12(sic: pd.Series) -> pd.Series:
@@ -86,10 +65,6 @@ def ff12(sic: pd.Series) -> pd.Series:
     return out
 
 
-FF12_NAMES = {1: "NoDur", 2: "Durbl", 3: "Manuf", 4: "Enrgy", 5: "Chems", 6: "BusEq", 7: "Telcm",
-              8: "Utils", 9: "Shops", 10: "Hlth", 11: "Money", 12: "Other"}
-
-
 def main():
     crsp = load_df(C.DATA_PROC / "crsp_monthly")
     cs = load_df(C.DATA_PROC / "compustat_signals")
@@ -99,19 +74,15 @@ def main():
     june["formation_year"] = june["date"].dt.year
     june = june.rename(columns={"me": "me_june", "date": "formation_date"})
 
-    if C.CCM_LINK_FILE.exists():
-        link_method = "CCM link table"
-        m = link_ccm(cs)
-    elif C.REQUIRE_CCM_LINK:
-        raise FileNotFoundError(f"{C.CCM_LINK_FILE} not found. Download the CRSP/Compustat Merged "
-                                "link table (see README) or set REQUIRE_CCM_LINK = False in config.py.")
-    else:
-        link_method = "CUSIP (fallback, REQUIRE_CCM_LINK = False)"
-        m = link_cusip(cs, june)
+    if not C.CCM_LINK_FILE.exists():
+        raise FileNotFoundError(f"{C.CCM_LINK_FILE} not found: download the CRSP/Compustat Merged "
+                                "link table (see README).")
+    link_method = "CCM link table"
+    m = link_ccm(cs)
     print("Link method:", link_method)
 
     # attach the June t CRSP cross-section (security must trade at formation)
-    m = m.merge(june[["permno", "formation_year", "formation_date", "permco", "me_june",
+    m = m.merge(june[["permno", "formation_year", "formation_date", "me_june",
                       "prc", "exch", "siccd"]], on=["permno", "formation_year"], how="inner")
     m = m[m["me_june"] > 0]
     # one security per firm-year (best link, then largest share class), one firm per security-year
@@ -143,9 +114,8 @@ def main():
     # ---- signal (cross-sectional, within each formation year) ------------------
     panel = build_signal(m, C.N_PORTFOLIOS, C.WINSOR_PCT, C.NYSE_BREAKPOINTS)
 
-    keep = ["permno", "permco", "gvkey", "conm", "formation_year", "formation_date", "datadate",
-            "me_june", "prc", "exch", "siccd", "ff12", "at", "at_lag", "xrd", "oibdp", "dlc", "dltt",
-            "che", "lev", "rd_at", "asset_growth", "opr", "d_opr", "rdm", "eyr", "dopr",
+    keep = ["permno", "gvkey", "conm", "formation_year", "datadate", "me_june", "prc", "exch",
+            "ff12", "xrd", "oibdp", "dlc", "dltt", "che", "d_opr", "rdm", "eyr", "dopr",
             "z_rdm", "z_eyr", "z_dopr", "score_RDV", "port_RDV"]
     panel = panel[keep]
     path = save_df(panel, C.DATA_PROC / "formation_panel")

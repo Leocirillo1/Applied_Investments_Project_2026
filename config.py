@@ -25,8 +25,7 @@ CRSP_FILE = DATA_RAW / "Prix 1.csv"            # CRSP v2 (CIZ) monthly stock fil
 COMPUSTAT_FILE = DATA_RAW / "Fundamentals.csv" # Compustat Fundamentals Annual
 CCM_LINK_FILE = DATA_RAW / "ccm_link.csv"      # CRSP/Compustat Merged link table (required)
 # Compustat is linked to CRSP with the official CCM link table (LINKTYPE LU/LC, LINKPRIM P/C, link
-# valid at the fiscal year-end). Set REQUIRE_CCM_LINK = False only to fall back to a CUSIP link.
-REQUIRE_CCM_LINK = True
+# valid at the fiscal year-end).
 
 # ----------------------------------------------------------------------------
 # Sample
@@ -61,7 +60,6 @@ N_PORTFOLIOS = 5                # quintiles; strategy = Q5 - Q1
 NYSE_BREAKPOINTS = True
 STRATEGY = "RDV"
 STRATEGY_NAME = "Underpriced innovators with real, improving earnings power (RDV)"
-MAIN_WEIGHTING = "VW"           # value-weighted; EW only as robustness
 
 # ----------------------------------------------------------------------------
 # Evaluation

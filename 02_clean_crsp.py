@@ -12,12 +12,11 @@ delisting payment into the final month), so no separate delisting adjustment is 
 (adding DLRET as in the legacy format would double count).
 
 Output: results/processed/crsp_monthly.parquet with
-  permno, permco, date (month end), ret, prc, me ($ million), me_lag (previous month ME),
-  shrout (thousands), vol (shares), exch (N/A/Q), siccd, cusip8 (historical), hdrcusip8
+  permno, date (month end), ret, prc, me ($ million), me_lag (previous month ME),
+  vol (shares, for trading volume), exch (N/A/Q), siccd (to exclude financials)
 
 Memory friendly: the ~1 GB CSV is read in chunks with only the needed columns.
 """
-import glob
 import time
 
 import numpy as np
@@ -26,21 +25,10 @@ import pandas as pd
 import config as C
 from src.utils import save_df
 
-USECOLS = ["PERMNO", "PERMCO", "HdrCUSIP", "CUSIP", "PrimaryExch", "SecurityNm",
+USECOLS = ["PERMNO", "PrimaryExch", "SecurityNm",
            "SecurityType", "SICCD", "MthCalDt", "MthPrc", "MthCap", "MthRet",
            "MthVol", "ShrOut"]
 CHUNK = 500_000
-
-
-def crsp_sources():
-    """The raw CSV on the user's PC; split .csv.gz parts only as a fallback (dev environment)."""
-    if C.CRSP_FILE.exists():
-        return [C.CRSP_FILE]
-    stem = C.CRSP_FILE.stem.replace(" ", "")
-    parts = sorted(glob.glob(str(C.DATA_RAW / "_transfer" / f"{stem}_part*.csv.gz")))
-    if not parts:
-        raise FileNotFoundError(f"{C.CRSP_FILE} not found")
-    return parts
 
 
 def clean_chunk(df: pd.DataFrame, stats: dict) -> pd.DataFrame:
@@ -57,7 +45,6 @@ def clean_chunk(df: pd.DataFrame, stats: dict) -> pd.DataFrame:
 
     out = pd.DataFrame({
         "permno": pd.to_numeric(df["PERMNO"], errors="coerce").astype("int64"),
-        "permco": pd.to_numeric(df["PERMCO"], errors="coerce"),
         "date": pd.to_datetime(df["MthCalDt"], errors="coerce") + pd.offsets.MonthEnd(0),
         "ret": pd.to_numeric(df["MthRet"], errors="coerce"),
         "prc": pd.to_numeric(df["MthPrc"], errors="coerce").abs(),
@@ -66,8 +53,6 @@ def clean_chunk(df: pd.DataFrame, stats: dict) -> pd.DataFrame:
         "vol": pd.to_numeric(df["MthVol"], errors="coerce"),
         "exch": df["PrimaryExch"].astype(str),
         "siccd": pd.to_numeric(df["SICCD"], errors="coerce"),
-        "cusip8": df["CUSIP"].astype(str).str.upper().str[:8],
-        "hdrcusip8": df["HdrCUSIP"].astype(str).str.upper().str[:8],
     })
     return out
 
@@ -76,12 +61,11 @@ def main():
     t0 = time.time()
     stats = {k: 0 for k in ["rows_raw", "after_equity", "after_adr", "after_exchange"]}
     pieces = []
-    for src in crsp_sources():
-        print("reading", src)
-        reader = pd.read_csv(src, usecols=lambda c: c in USECOLS, dtype=str,
-                             keep_default_na=False, na_values=[""], chunksize=CHUNK)
-        for chunk in reader:
-            pieces.append(clean_chunk(chunk, stats))
+    print("reading", C.CRSP_FILE)
+    reader = pd.read_csv(C.CRSP_FILE, usecols=lambda c: c in USECOLS, dtype=str,
+                         keep_default_na=False, na_values=[""], chunksize=CHUNK)
+    for chunk in reader:
+        pieces.append(clean_chunk(chunk, stats))
     crsp = pd.concat(pieces, ignore_index=True)
     del pieces
 
@@ -89,7 +73,7 @@ def main():
     me = crsp["mthcap"].where(crsp["mthcap"] > 0, crsp["prc"] * crsp["shrout"])
     crsp["me"] = me / 1000.0
     crsp.loc[~(crsp["me"] > 0), "me"] = np.nan
-    crsp = crsp.drop(columns="mthcap")
+    crsp = crsp.drop(columns=["mthcap", "shrout"])
 
     # One row per PERMNO-month
     n0 = len(crsp)

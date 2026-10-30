@@ -10,7 +10,6 @@ Compustat back-fill bias as in Fama-French):
   RDV inputs   xrd, oibdp, dlc, dltt, che (enterprise value) and
                opr   = (OIBDP + XRD)_t / AT_{t-1}   operating profitability with R&D added back
                d_opr = opr_t - opr_{t-1}            improvement (needs 3 consecutive years)
-  descriptive  lev = (DLC+DLTT)/AT, asset_growth, rd_at = XRD/AT_{t-1} (quintile characteristics)
 
 Missing values are kept missing (never replaced by zero, as required in class).
 
@@ -28,7 +27,7 @@ from src.utils import save_df
 
 
 def main():
-    cs = pd.read_csv(C.COMPUSTAT_FILE, dtype={"GVKEY": str, "cusip": str, "cik": str})
+    cs = pd.read_csv(C.COMPUSTAT_FILE, dtype={"GVKEY": str}, low_memory=False)
     rep = {"rows_raw": len(cs)}
     cs = cs[(cs["indfmt"] == "INDL") & (cs["datafmt"] == "STD") & (cs["popsrc"] == "D")
             & (cs["consol"] == "C") & (cs["curcd"] == "USD")].copy()
@@ -36,7 +35,6 @@ def main():
 
     cs["datadate"] = pd.to_datetime(cs["datadate"])
     cs = cs.rename(columns={"GVKEY": "gvkey"})
-    cs["cusip8"] = cs["cusip"].astype(str).str.upper().str[:8]
 
     # one report per firm-fiscal year (latest datadate), then per firm-calendar year
     cs = cs.sort_values(["gvkey", "fyear", "datadate"])
@@ -53,10 +51,6 @@ def main():
     lag["fyear"] = lag["fyear"] + 1
     cs = cs.merge(lag, on=["gvkey", "fyear"], how="left", suffixes=("", "_lag"))
 
-    # descriptive / validation characteristics
-    cs["lev"] = (cs["dlc"] + cs["dltt"]) / cs["at"]
-    cs["asset_growth"] = cs["at"] / cs["at_lag"] - 1
-    cs["rd_at"] = cs["xrd"] / cs["at_lag"]
     # RDV input: operating profitability with R&D added back (OIBDP is after R&D expense)
     #   opr = (OIBDP + XRD)_FY / AT_{FY-1}; its previous value comes from the SAME firm's FY-1 report
     cs["opr"] = (cs["oibdp"] + cs["xrd"]) / cs["at_lag"]
@@ -80,17 +74,15 @@ def main():
     rep["reporting_lag_months_min"] = int(lag_months.min())
     rep["reporting_lag_months_max"] = int(lag_months.max())
 
-    keep = ["gvkey", "cusip8", "tic", "conm", "datadate", "fyear", "fyr", "formation_year",
-            "gsector", "at", "at_lag", "oibdp", "xrd", "dlc", "dltt", "che",
-            "lev", "asset_growth", "rd_at",
-            "opr", "opr_lag", "d_opr"]
+    keep = ["gvkey", "conm", "datadate", "fyear", "formation_year", "gsector",
+            "xrd", "oibdp", "dlc", "dltt", "che", "d_opr"]
     out = cs[keep].reset_index(drop=True)
     path = save_df(out, C.DATA_PROC / "compustat_signals")
 
     rep = pd.Series(rep, name="value")
     rep.to_csv(C.OUT_TABLES / "data_compustat_cleaning_report.csv")
     print(rep.to_string())
-    print(out[["rd_at", "opr", "d_opr", "lev"]].describe(percentiles=[.01, .5, .99]).round(3).to_string())
+    print(out[["xrd", "oibdp", "d_opr"]].describe(percentiles=[.01, .5, .99]).round(3).to_string())
     print("saved", path)
 
 

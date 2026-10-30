@@ -61,9 +61,6 @@ def main():
         rd_to_market=("rdm", "median"),
         earnings_yield_rd_added=("eyr", "median"),
         change_profitability_rd_added=("dopr", "median"),
-        rd_to_assets=("rd_at", "median"),
-        leverage=("lev", "median"),
-        asset_growth=("asset_growth", "median"),
     )
     agg["me_share"] = agg["me_share"] / agg.groupby(level=0)["me_share"].transform("sum")
     char = agg.groupby(level=1).mean().T

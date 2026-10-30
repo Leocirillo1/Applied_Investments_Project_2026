@@ -5,6 +5,9 @@ results/
 # Local helper to push to GitHub
 push_to_github.bat
 __pycache__/
+# Local Python environment and editor settings
+.venv/
+.idea/
 *.pyc
 .ipynb_checkpoints/
 .DS_Store

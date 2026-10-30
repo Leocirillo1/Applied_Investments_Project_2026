@@ -43,9 +43,7 @@ def check_packages() -> bool:
 def check_raw_data() -> bool:
     """The WRDS files are not on GitHub: each user must copy them into Data/ once."""
     import config as C
-    crsp_parts = list((C.DATA_RAW / "_transfer").glob(C.CRSP_FILE.stem.replace(" ", "") + "_part*.csv.gz"))
-    needed = [C.CRSP_FILE, C.COMPUSTAT_FILE] + ([C.CCM_LINK_FILE] if C.REQUIRE_CCM_LINK else [])
-    missing = [p for p in needed if not p.exists() and not (p == C.CRSP_FILE and crsp_parts)]
+    missing = [p for p in (C.CRSP_FILE, C.COMPUSTAT_FILE, C.CCM_LINK_FILE) if not p.exists()]
     if missing:
         print("\n" + "!" * 78)
         print("Raw WRDS data not found (they are not on GitHub because WRDS data are licensed).")
