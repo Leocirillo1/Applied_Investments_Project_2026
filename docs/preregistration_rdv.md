@@ -18,7 +18,8 @@ heavy R&D investors the first term buys.
 
 ## Definition
 - **Universe:** US common stocks on NYSE/AMEX/NASDAQ, non-financial, R&D reporters
-  (XRD_FY > 0; missing R&D is never set to 0), ME_June > 0. First formation June 1975
+  (XRD_FY > 0; missing R&D is never set to 0), ME_June > 0, previous fiscal year in Compustat
+  (limits back-fill bias). No other accounting filter. First formation June 1975
   (R&D reporting mandatory since SFAS 2); returns 1975-07 → 2025-12.
 - **Timing:** fiscal year FY ends in calendar year t−1 (data ≥ 6 months old); ME of June t.
 - **Inputs:**

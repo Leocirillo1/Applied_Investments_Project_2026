@@ -63,7 +63,7 @@ Main results: `results/tables/results.xlsx` and `results/figures/`.
   - US common stocks (CRSP v2/CIZ `SecurityType = EQTY`, no ADRs) listed on NYSE, AMEX or NASDAQ in the month considered.
   - Compustat linked to CRSP with the official CRSP/Compustat Merged link table (link types LU/LC, primary links P/C, link valid at the fiscal year-end).
   - Financials (SIC 6000–6999) excluded.
-  - Complete core accounting data required (two consecutive fiscal years).
+  - Only filters needed by the signal: R&D reporters (XRD > 0) with positive market equity, and the previous fiscal year in Compustat (limits back-fill bias). No other accounting item is required; a missing EV yield or improvement term counts as 0 in the score.
   - **R&D reporters only:** missing R&D is never treated as zero.
   - Dead firms are included.
 - **Delisting returns** are already included in CIZ monthly returns.
@@ -114,5 +114,5 @@ Main results: `results/tables/results.xlsx` and `results/figures/`.
 ## Known limitations
 
 - Spreads are assumed by size group until the daily bid/ask data are added.
-- The alpha is weaker after 2000: FF5+MOM 0.28%/month (t 1.6) vs 0.60 (t 2.9) over 1975–1999.
-- The alpha is smaller and not significant among large caps only (FF5+MOM 0.23%/month, t 1.8).
+- The alpha is weaker after 2000: FF5+MOM 0.28%/month (t 1.6) vs 0.61 (t 3.0) over 1975–1999.
+- The alpha is smaller and not significant among large caps only (FF5+MOM 0.22%/month, t 1.7).

@@ -40,10 +40,9 @@ LAST_RETURN_MONTH = "2025-12"
 # Universe
 # ----------------------------------------------------------------------------
 EXCLUDE_FINANCIALS = True       # SIC 6000-6999 (banks, insurers, REITs, funds)
-# Data-quality screen: complete core accounting data (capital expenditure, operating income,
-# debt) for two consecutive fiscal years.
-SCREEN_ITEMS = ["capx_at", "roa", "dlev", "ddebt_at"]
-ROA_DENOMINATOR = "at"          # roa = OIBDP / AT (used only by the screen)
+# Only filters needed by the signal itself: R&D reporters (XRD > 0) with positive market equity.
+# A firm must also have the previous fiscal year in Compustat (lagged total assets > 0): this
+# limits Compustat back-fill bias (Fama-French 1993) and is the denominator of the improvement term.
 MIN_LAGGED_ASSETS = 0.0
 
 # ----------------------------------------------------------------------------

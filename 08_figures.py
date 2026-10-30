@@ -138,7 +138,7 @@ def main():
     # 6. universe
     uni = pd.read_csv(C.OUT_TABLES / "data_universe_by_year.csv", index_col=0)
     fig, ax = plt.subplots(figsize=(7.5, 3.4))
-    ax.plot(uni.index, uni["n_complete_data"], color=GREY, label="All non-financial firms (complete data)")
+    ax.plot(uni.index, uni["n_nonfinancial"], color=GREY, label="All non-financial firms (linked to Compustat)")
     ax.plot(uni.index, uni["n_rd_reporters"], color=BLUE, label="R&D reporters (RDV universe)")
     ax.plot(uni.index, uni["n_nyse_rd_reporters"], color=ORANGE, label="NYSE R&D reporters (breakpoints)")
     ax.set_title("Number of firms per formation year (end of June)")

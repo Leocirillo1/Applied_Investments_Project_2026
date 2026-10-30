@@ -7,8 +7,9 @@ Formation at the end of June of year t uses ONLY information available at that d
   * market data:     CRSP June t (market cap, exchange, SIC code)
   * winsorisation, z-scores and NYSE breakpoints use only the June-t cross-section.
 
-Universe: US common stocks NYSE/AMEX/NASDAQ linked to Compustat (CCM link table), non-financial, complete core
-accounting data (config.SCREEN_ITEMS), R&D reporters (XRD > 0; missing R&D is never set to 0).
+Universe: US common stocks NYSE/AMEX/NASDAQ linked to Compustat (CCM link table), non-financial,
+previous fiscal year in Compustat, R&D reporters (XRD > 0; missing R&D is never set to 0).
+No other accounting filter: a missing EV yield or improvement term counts as z = 0.
 
 RDV score = z(XRD/ME) + z((OIBDP+XRD)/EV) + z(delta[(OIBDP+XRD)/AT_{t-1}])   (equal weights)
 Portfolios: Q1 (lowest) ... Q5 (highest), strategy = Q5 - Q1.
@@ -136,8 +137,6 @@ def main():
     if C.EXCLUDE_FINANCIALS:
         m = m[~is_fin]
     n_nonfin = m.groupby("formation_year").size().rename("n_nonfinancial")
-    m = m.dropna(subset=C.SCREEN_ITEMS)
-    n_screen = m.groupby("formation_year").size().rename("n_complete_data")
     m = m[(m["xrd"] > 0) & (m["me_june"] > 0)]
     m["ff12"] = ff12(m["siccd"].fillna(0))
 
@@ -153,7 +152,7 @@ def main():
 
     cov = cov[cov.index.isin(n_linked.index)]
     g = panel.groupby("formation_year")
-    summary = pd.concat([n_linked, cov, n_nonfin, n_screen,
+    summary = pd.concat([n_linked, cov, n_nonfin,
                          g.size().rename("n_rd_reporters"),
                          g["exch"].apply(lambda x: (x == "N").sum()).rename("n_nyse_rd_reporters")], axis=1)
     summary.to_csv(C.OUT_TABLES / "data_universe_by_year.csv")

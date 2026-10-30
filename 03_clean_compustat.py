@@ -10,8 +10,7 @@ Compustat back-fill bias as in Fama-French):
   RDV inputs   xrd, oibdp, dlc, dltt, che (enterprise value) and
                opr   = (OIBDP + XRD)_t / AT_{t-1}   operating profitability with R&D added back
                d_opr = opr_t - opr_{t-1}            improvement (needs 3 consecutive years)
-  data screen  capx_at = CAPX_t/AT_{t-1}, roa = OIBDP_t/AT_t, dlev = change in (DLC+DLTT)/AT,
-               ddebt_at = change in (DLC+DLTT) / AT_{t-1}  (complete core data, see config)
+  descriptive  lev = (DLC+DLTT)/AT, asset_growth, rd_at = XRD/AT_{t-1} (quintile characteristics)
 
 Missing values are kept missing (never replaced by zero, as required in class).
 
@@ -50,17 +49,12 @@ def main():
     cs.loc[~(cs["at"] > 0), "at"] = np.nan
 
     # previous fiscal year of the SAME firm (exact fyear-1 match, not just previous row)
-    lag = cs[["gvkey", "fyear", "at", "dlc", "dltt"]].copy()
+    lag = cs[["gvkey", "fyear", "at"]].copy()
     lag["fyear"] = lag["fyear"] + 1
     cs = cs.merge(lag, on=["gvkey", "fyear"], how="left", suffixes=("", "_lag"))
 
-    cs["lev"] = (cs["dlc"] + cs["dltt"]) / cs["at"]
-    cs["lev_lag"] = (cs["dlc_lag"] + cs["dltt_lag"]) / cs["at_lag"]
-    cs["dlev"] = cs["lev"] - cs["lev_lag"]
-    cs["ddebt_at"] = ((cs["dlc"] + cs["dltt"]) - (cs["dlc_lag"] + cs["dltt_lag"])) / cs["at_lag"]
-    cs["capx_at"] = cs["capx"] / cs["at_lag"]
-    cs["roa"] = cs["oibdp"] / cs[C.ROA_DENOMINATOR]
     # descriptive / validation characteristics
+    cs["lev"] = (cs["dlc"] + cs["dltt"]) / cs["at"]
     cs["asset_growth"] = cs["at"] / cs["at_lag"] - 1
     cs["rd_at"] = cs["xrd"] / cs["at_lag"]
     # RDV input: operating profitability with R&D added back (OIBDP is after R&D expense)
@@ -71,12 +65,10 @@ def main():
     cs = cs.merge(lag2, on=["gvkey", "fyear"], how="left", suffixes=("", "_lag"))
     cs["d_opr"] = cs["opr"] - cs["opr_lag"]
 
-    cs = cs[cs["at_lag"] > C.MIN_LAGGED_ASSETS]
-    for v in ["capx_at", "roa", "dlev", "ddebt_at"]:
-        rep[f"non_missing_{v}"] = int(cs[v].notna().sum())
+    cs = cs[cs["at_lag"] > C.MIN_LAGGED_ASSETS]          # previous fiscal year required
+    rep["firm_years_with_previous_year"] = len(cs)
     cs = cs.replace([np.inf, -np.inf], np.nan)
-    complete = cs[["capx_at", "roa", "dlev"]].notna().all(axis=1)
-    rep["firm_years_with_all_3_inputs"] = int(complete.sum())
+    rep["firm_years_with_rd"] = int((cs["xrd"] > 0).sum())
 
     # ---- timing: first portfolio formation that may use this report ------------
     cs["formation_year"] = cs["year_fye"] + 1
@@ -89,8 +81,8 @@ def main():
     rep["reporting_lag_months_max"] = int(lag_months.max())
 
     keep = ["gvkey", "cusip8", "tic", "conm", "datadate", "fyear", "fyr", "formation_year",
-            "gsector", "at", "at_lag", "capx", "oibdp", "xrd", "dlc", "dltt", "che",
-            "lev", "capx_at", "roa", "dlev", "ddebt_at", "asset_growth", "rd_at",
+            "gsector", "at", "at_lag", "oibdp", "xrd", "dlc", "dltt", "che",
+            "lev", "asset_growth", "rd_at",
             "opr", "opr_lag", "d_opr"]
     out = cs[keep].reset_index(drop=True)
     path = save_df(out, C.DATA_PROC / "compustat_signals")
