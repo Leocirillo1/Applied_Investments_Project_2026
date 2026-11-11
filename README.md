@@ -11,13 +11,13 @@ Every end of June, among US non-financial firms that report R&D:
 $$\text{Score} = z\!\left(\frac{R\&D}{ME}\right) + z\!\left(\frac{OIBDP + R\&D}{EV}\right) + z\!\left(\Delta\frac{OIBDP + R\&D}{AT_{-1}}\right)$$
 
 - **Inputs:**
-  - **R&D / ME:** innovation effort relative to price (Chan, Lakonishok & Sougiannis 2001).
+  - **R&D / AT:** innovation effort relative to the size of the firm (R&D and total assets of the same fiscal year).
   - **(OIBDP + R&D) / EV:** cheap relative to true earnings power. R&D is added back because accounting expenses it (Ball, Gerakos, Linnainmaa & Nikolaev 2015). EV = ME + DLC + DLTT − CHE.
   - **Δ (OIBDP + R&D) / AT₋₁:** earnings power is improving.
 - **Score:** equal weights. Each input is winsorised at 1%/99% and z-scored within each June.
 - **Portfolios:** quintiles with NYSE breakpoints. **Long Q5, short Q1, value-weighted**, held July to June.
-- **Story:** accounting hides the value of innovation. We buy firms that invest heavily in R&D relative to their price, are cheap once R&D is added back to earnings, and whose earnings power is improving.
-- **Design fixed in advance:** the definition was written down before the backtest and never changed (`docs/preregistration_rdv.md`).
+- **Story:** accounting hides the value of innovation. We buy firms that invest heavily in R&D relative to their size, are cheap once R&D is added back to earnings, and whose earnings power is improving.
+- **Design fixed in advance:** equal weights, nothing estimated from the data, same rule over the whole sample.
 
 ## How to run
 
@@ -26,8 +26,9 @@ $$\text{Score} = z\!\left(\frac{R\&D}{ME}\right) + z\!\left(\frac{OIBDP + R\&D}{
    - `Prix 1.csv` (CRSP monthly)
    - `Fundamentals.csv` (Compustat annual)
    - `ccm_link.csv` (CRSP/Compustat Merged link table, see "Data to download" below)
+   - `crsp_daily_1.csv.gz`, `crsp_daily_2.csv.gz`, … (CRSP daily file, for the trading costs, see "Data to download" below)
 2. Install packages once: `pip install -r requirements.txt`.
-3. Run `python run_all.py` (about 2–3 minutes).
+3. Run `python run_all.py` (a few minutes; reading the daily files takes most of the time).
    - After changing `config.py`: `python run_all.py --from 4 --skip-download`.
 
 Main results: `results/tables/results.xlsx` and `results/figures/`.
@@ -49,7 +50,6 @@ Main results: `results/tables/results.xlsx` and `results/figures/`.
 | `10_fama_macbeth.py` | Fama-MacBeth regressions (score, components, size, momentum) |
 | `src/` | Helpers: I/O, winsorise/z-score, regressions, GRS, portfolio sorts, the RDV signal |
 | `tools/validate_pipeline.py` | Data check: value-weighted return of the cleaned CRSP universe vs the Fama-French market |
-| `docs/` | Definition of the strategy, written before the backtest |
 
 ## Methodology and how biases are avoided
 
@@ -66,7 +66,7 @@ Main results: `results/tables/results.xlsx` and `results/figures/`.
   - **R&D reporters only:** missing R&D is never treated as zero.
   - Dead firms are included.
 - **Delisting returns** are already included in CIZ monthly returns.
-- **Sample:** 1975-07 → 2025-12 (606 months; R&D reporting mandatory since SFAS 2, 1975).
+- **Sample:** 1975-07 → 2025-12 (606 months; SFAS 2, issued in 1974, requires R&D expensing for fiscal years from 1975).
 - **Inference:**
   - Newey-West (6 lags).
   - All 7 models on the same sample.
@@ -74,7 +74,8 @@ Main results: `results/tables/results.xlsx` and `results/figures/`.
 - **Trading costs** (Session 3):
   - Turnover = Σ|w_t − w*_t|, with weights drifting with returns.
   - Cost = |Δw| × half-spread + |Δw| × λ√(trade / ADV), with λ = 2.5 / 1.5 / 1.0 for micro / small / large caps.
-  - Spreads are size-group assumptions until bid/ask data are added (see below). The break-even cost needs no assumption.
+  - Half-spreads are measured for every stock-month from the CRSP daily files `Data/crsp_daily_*.csv.gz` (1974–2025): closing quoted spread when the stock has quotes on at least 10 days of the month, otherwise the Abdi-Ranaldo high-low estimator (mainly NYSE/AMEX before 1993, when CRSP has their quotes only on days without trades). A stock-month without a measured spread gets the median of the same NYSE size decile, same month. No extrapolation: step 7 stops if a month of the sample is not covered by the daily files.
+  - The break-even cost needs no assumption.
 
 ## Validation checks (`python tools/validate_pipeline.py`)
 
@@ -88,15 +89,15 @@ Main results: `results/tables/results.xlsx` and `results/figures/`.
    - Company codes: search the entire database. Variables: GVKEY, LPERMNO, LPERMCO, LINKTYPE, LINKPRIM, LIID, LINKDT, LINKENDDT.
    - Output: comma-delimited (.csv), dates YYYY-MM-DD. Step 4 stops with a clear message if the file is missing.
 
-**Next step, for the trading costs** (not used yet by the code):
-
-2. **CRSP Stock v2 (CIZ) → Daily Stock File**
-   - Variables: `PERMNO, DlyCalDt, DlyPrc, DlyPrcFlg, DlyBid, DlyAsk, DlyHigh, DlyLow, DlyVol`, from 1974 to 2025, entire database, gzip-compressed csv.
-   - Split the dates into about 10-year queries and save them as `Data/crsp_daily_1.csv.gz`, `crsp_daily_2.csv.gz`, …
-   - Use: closing bid/ask quoted spreads where they exist, high/low spread estimates (Corwin-Schultz 2012; Abdi-Ranaldo 2017) for the other months, remaining gaps filled with size-group means (the professor's method), and average daily dollar volume for the price-impact term.
+2. **CRSP Stock v2 (CIZ) → Daily Stock File** (for the trading costs, step 7)
+   - Variables: `PERMNO, DlyCalDt, DlyPrc, DlyPrcFlg, DlyBid, DlyAsk, DlyHigh, DlyLow, DlyVol`, from 1974 to 2025, gzip-compressed csv, sorted by PERMNO and date (the WRDS default).
+   - Company codes: upload `results/tables/permnos_rdv_universe.txt` (PERMNOs of the strategy universe, written by step 4).
+   - Split the dates into several queries and save them as `Data/crsp_daily_1.csv.gz`, `crsp_daily_2.csv.gz`, … The files must cover every month from 1975-07 to 2025-12.
+   - Step 7 writes `results/tables/permnos_missing_daily.txt`: universe stocks absent from the daily files. They can be downloaded in one more file (`crsp_daily_4.csv.gz`, …) to measure their spreads too.
 
 ## Known limitations
 
-- Spreads are assumed by size group until the daily bid/ask data are added.
-- The alpha is weaker after 2000: FF5+MOM 0.28%/month (t 1.6) vs 0.61 (t 3.0) over 1975–1999.
-- The alpha is smaller and not significant among large caps only (FF5+MOM 0.22%/month, t 1.7).
+- Spreads are measured for about 92% of the traded value; the rest uses the size-decile median of the same month. Before 1993, NYSE/AMEX spreads come from high and low prices, which is less precise than quotes. The price impact uses the course parameters.
+- The alpha is smaller after 2000: FF5+MOM 0.41%/month (t 2.3) vs 0.69 (t 3.7) over 1975–1999; and among large caps only (0.42, t 3.3).
+- The q5 alpha (0.27, t 2.1) is not significant after trading costs (t 1.7).
+- In Fama-MacBeth regressions, only the earnings yield with R&D added back is significant when the three inputs enter together; R&D/AT and the change in profitability are not.

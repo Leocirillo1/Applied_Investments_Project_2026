@@ -10,11 +10,11 @@ from src.utils import winsorize, zscore
 
 def rdv_inputs(df: pd.DataFrame) -> pd.DataFrame:
     """Add the three inputs. Accounting = fiscal year ending in t-1, ME = June t.
-      rdm  = XRD / ME                                   (R&D intensity relative to price)
+      rda  = XRD / AT  (same fiscal year)               (R&D intensity relative to firm size)
       eyr  = (OIBDP + XRD) / EV, EV = ME + DLC + DLTT - CHE   (earnings yield, R&D added back)
       dopr = (OIBDP+XRD)_FY / AT_{FY-1} - (OIBDP+XRD)_{FY-1} / AT_{FY-2}   (improvement)"""
     df = df.copy()
-    df["rdm"] = df["xrd"] / df["me_june"]
+    df["rda"] = (df["xrd"] / df["at"]).where(df["at"] > 0)
     ev = df["me_june"] + df["dlc"] + df["dltt"] - df["che"]
     df["eyr"] = ((df["oibdp"] + df["xrd"]) / ev).where(ev > 0)
     df["dopr"] = df["d_opr"]
@@ -25,10 +25,10 @@ def score_and_sort(g: pd.DataFrame, n_port: int, winsor: float, nyse_bp: bool = 
     """One formation year: z-scores, RDV score (equal weights; missing eyr/dopr -> z = 0)
     and RDV portfolios (NYSE breakpoints)."""
     g = g.copy()
-    g["z_rdm"] = zscore(winsorize(g["rdm"], winsor))
+    g["z_rda"] = zscore(winsorize(g["rda"], winsor))
     g["z_eyr"] = zscore(winsorize(g["eyr"], winsor)).fillna(0)
     g["z_dopr"] = zscore(winsorize(g["dopr"], winsor)).fillna(0)
-    g["score_RDV"] = g["z_rdm"] + g["z_eyr"] + g["z_dopr"]
+    g["score_RDV"] = g["z_rda"] + g["z_eyr"] + g["z_dopr"]
     nyse = g["exch"] == "N"
     g["port_RDV"] = quantile_sort(g["score_RDV"], nyse, n_port, nyse_bp)
     return g

@@ -1,9 +1,9 @@
 """
 Central configuration - "Underpriced innovators with real, improving earnings power" (RDV).
 
-Strategy (design fixed before the backtest, docs/preregistration_rdv.md):
+Strategy (equal weights, nothing estimated from the data):
     universe : US common stocks (NYSE/AMEX/NASDAQ), non-financial, R&D reporters (XRD > 0)
-    score    : z(XRD/ME) + z((OIBDP + XRD)/EV) + z(delta[(OIBDP + XRD)/AT_{t-1}])   equal weights
+    score    : z(XRD/AT) + z((OIBDP + XRD)/EV) + z(delta[(OIBDP + XRD)/AT_{t-1}])   equal weights
     portfolio: NYSE quintiles, value-weighted, long Q5 - short Q1, rebalanced every end of June
 
 Every design choice lives here, so it is changed in ONE place.
@@ -24,6 +24,7 @@ OUT_FIGURES = RESULTS / "figures"
 CRSP_FILE = DATA_RAW / "Prix 1.csv"            # CRSP v2 (CIZ) monthly stock file
 COMPUSTAT_FILE = DATA_RAW / "Fundamentals.csv" # Compustat Fundamentals Annual
 CCM_LINK_FILE = DATA_RAW / "ccm_link.csv"      # CRSP/Compustat Merged link table (required)
+CRSP_DAILY_PATTERN = "crsp_daily_*.csv.gz"     # CRSP daily files (bid, ask, high, low), 1974-2025
 # Compustat is linked to CRSP with the official CCM link table (LINKTYPE LU/LC, LINKPRIM P/C, link
 # valid at the fiscal year-end).
 
@@ -78,10 +79,9 @@ MODELS = {
 }
 
 # ----------------------------------------------------------------------------
-# Trading costs (Session 3). Spreads are ASSUMPTIONS by size group until bid/ask data
-# are added (see README, "Data to download"). The break-even cost needs no assumption.
+# Trading costs (Session 3). Half-spreads are measured from the CRSP daily files (src/spreads.py);
+# price impact uses the size-group lambdas below. The break-even cost needs no assumption.
 # ----------------------------------------------------------------------------
-TC_HALF_SPREAD = {"micro": 0.0100, "small": 0.0050, "large": 0.0015}   # one-way, decimal
 TC_LAMBDA = {"micro": 2.5, "small": 1.5, "large": 1.0}                 # 1% of ADV -> 25/15/10 bps
 TC_AUM_USD = 100e6              # per leg, Dec-2025 dollars, scaled back with total market cap
 TC_TRADING_DAYS = 21

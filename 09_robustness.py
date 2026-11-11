@@ -22,7 +22,7 @@ from src.signal import build_signal
 from src.utils import append_sheets, load_df, ts_regression
 
 LS_N = lambda n: f"Q{n}-Q1"  # noqa: E731
-BASE_COLS = ["permno", "formation_year", "exch", "me_june", "prc", "xrd", "oibdp", "dlc", "dltt",
+BASE_COLS = ["permno", "formation_year", "exch", "me_june", "prc", "xrd", "at", "oibdp", "dlc", "dltt",
              "che", "d_opr"]
 
 

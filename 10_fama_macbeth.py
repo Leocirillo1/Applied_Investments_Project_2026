@@ -50,14 +50,14 @@ def main():
     panel = load_df(C.DATA_PROC / "formation_panel")
     d = crsp.dropna(subset=["ret"]).merge(momentum(crsp), on=["permno", "date"], how="left")
     d["formation_year"] = np.where(d["date"].dt.month > C.FORMATION_MONTH, d["date"].dt.year, d["date"].dt.year - 1)
-    d = d.merge(panel[["permno", "formation_year", "me_june", "score_RDV", "z_rdm", "z_eyr", "z_dopr"]],
+    d = d.merge(panel[["permno", "formation_year", "me_june", "score_RDV", "z_rda", "z_eyr", "z_dopr"]],
                 on=["permno", "formation_year"])
     d["log_me"] = np.log(d["me_june"])
     d = d[d["date"] >= pd.Timestamp(C.REG_START) + pd.offsets.MonthEnd(0)]
     specs = {
         "(1) RDV score": ["score_RDV"],
         "(2) RDV score + size + mom": ["score_RDV", "log_me", "mom"],
-        "(3) components + size + mom": ["z_rdm", "z_eyr", "z_dopr", "log_me", "mom"],
+        "(3) components + size + mom": ["z_rda", "z_eyr", "z_dopr", "log_me", "mom"],
     }
     out = pd.DataFrame({name: fm(d, xs) for name, xs in specs.items()})
     out.to_csv(C.OUT_TABLES / "fama_macbeth_RDV.csv")

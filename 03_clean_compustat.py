@@ -75,7 +75,7 @@ def main():
     rep["reporting_lag_months_max"] = int(lag_months.max())
 
     keep = ["gvkey", "conm", "datadate", "fyear", "formation_year", "gsector",
-            "xrd", "oibdp", "dlc", "dltt", "che", "d_opr"]
+            "xrd", "at", "oibdp", "dlc", "dltt", "che", "d_opr"]
     out = cs[keep].reset_index(drop=True)
     path = save_df(out, C.DATA_PROC / "compustat_signals")
 

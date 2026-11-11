@@ -40,10 +40,12 @@ def check_packages() -> bool:
     return not missing
 
 
-def check_raw_data() -> bool:
+def check_raw_data(start: int) -> bool:
     """The WRDS files are not on GitHub: each user must copy them into Data/ once."""
     import config as C
-    missing = [p for p in (C.CRSP_FILE, C.COMPUSTAT_FILE, C.CCM_LINK_FILE) if not p.exists()]
+    missing = [str(p) for p in (C.CRSP_FILE, C.COMPUSTAT_FILE, C.CCM_LINK_FILE) if start <= 4 and not p.exists()]
+    if start <= 7 and not list(C.DATA_RAW.glob(C.CRSP_DAILY_PATTERN)):
+        missing.append(str(C.DATA_RAW / C.CRSP_DAILY_PATTERN))
     if missing:
         print("\n" + "!" * 78)
         print("Raw WRDS data not found (they are not on GitHub because WRDS data are licensed).")
@@ -89,7 +91,7 @@ def main():
     download = (args.start <= 1 and not args.skip_download) or not factors_file.exists()
     if not check_packages():
         sys.exit(1)
-    if args.start <= 3 and not check_raw_data():
+    if not check_raw_data(args.start):
         sys.exit(1)
     if args.start <= 2:
         clear_outputs(C)

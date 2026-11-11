@@ -58,7 +58,7 @@ def main():
         me_share=("me_june", "sum"),
         pct_nyse=("is_nyse", "mean"),
         score=("score_RDV", "median"),
-        rd_to_market=("rdm", "median"),
+        rd_to_assets=("rda", "median"),
         earnings_yield_rd_added=("eyr", "median"),
         change_profitability_rd_added=("dopr", "median"),
     )

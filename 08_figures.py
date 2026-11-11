@@ -116,7 +116,7 @@ def main():
     ax.set_xticks(range(len(models)), models)
     ax.set_ylabel("Alpha (% per month)")
     ax.set_title(f"RDV {LS} alpha under seven factor models (95% CI, Newey-West)")
-    ax.legend(loc="lower left")
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.1), ncol=2)
     save(fig, "fig4_alpha_by_model.png")
 
     # 5. rolling alpha
@@ -143,12 +143,12 @@ def main():
     ax.plot(uni.index, uni["n_nyse_rd_reporters"], color=ORANGE, label="NYSE R&D reporters (breakpoints)")
     ax.set_title("Number of firms per formation year (end of June)")
     ax.set_ylabel("Firms")
-    ax.legend(loc="upper left", fontsize=8)
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.1), ncol=3, fontsize=8)
     save(fig, "fig6_universe.png")
 
     # 7. characteristics by quintile
     ch = pd.read_csv(C.OUT_TABLES / "quintile_characteristics_RDV.csv", index_col=0)
-    items = [("rd_to_market", "R&D / market equity"),
+    items = [("rd_to_assets", "R&D / total assets"),
              ("earnings_yield_rd_added", "(OIBDP + R&D) / EV"),
              ("change_profitability_rd_added", "Change in (OIBDP + R&D) / AT")]
     fig, axes = plt.subplots(1, 3, figsize=(9, 3))

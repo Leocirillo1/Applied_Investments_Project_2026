@@ -4,6 +4,9 @@ Data/
 results/
 # Local helper to push to GitHub
 push_to_github.bat
+# Report and old design notes are not part of the code repository
+report/
+docs/
 __pycache__/
 # Local Python environment and editor settings
 .venv/

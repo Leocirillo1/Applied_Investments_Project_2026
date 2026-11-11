@@ -11,10 +11,11 @@ Universe: US common stocks NYSE/AMEX/NASDAQ linked to Compustat (CCM link table)
 previous fiscal year in Compustat, R&D reporters (XRD > 0; missing R&D is never set to 0).
 No other accounting filter: a missing EV yield or improvement term counts as z = 0.
 
-RDV score = z(XRD/ME) + z((OIBDP+XRD)/EV) + z(delta[(OIBDP+XRD)/AT_{t-1}])   (equal weights)
+RDV score = z(XRD/AT) + z((OIBDP+XRD)/EV) + z(delta[(OIBDP+XRD)/AT_{t-1}])   (equal weights)
 Portfolios: Q1 (lowest) ... Q5 (highest), strategy = Q5 - Q1.
 
 Output: results/processed/formation_panel.parquet  (one row per stock x formation year)
+        results/tables/permnos_rdv_universe.txt   (PERMNO list for the CRSP daily download)
 """
 import numpy as np
 import pandas as pd
@@ -115,8 +116,8 @@ def main():
     panel = build_signal(m, C.N_PORTFOLIOS, C.WINSOR_PCT, C.NYSE_BREAKPOINTS)
 
     keep = ["permno", "gvkey", "conm", "formation_year", "datadate", "me_june", "prc", "exch",
-            "ff12", "xrd", "oibdp", "dlc", "dltt", "che", "d_opr", "rdm", "eyr", "dopr",
-            "z_rdm", "z_eyr", "z_dopr", "score_RDV", "port_RDV"]
+            "ff12", "xrd", "at", "oibdp", "dlc", "dltt", "che", "d_opr", "rda", "eyr", "dopr",
+            "z_rda", "z_eyr", "z_dopr", "score_RDV", "port_RDV"]
     panel = panel[keep]
     path = save_df(panel, C.DATA_PROC / "formation_panel")
 
@@ -126,6 +127,9 @@ def main():
                          g.size().rename("n_rd_reporters"),
                          g["exch"].apply(lambda x: (x == "N").sum()).rename("n_nyse_rd_reporters")], axis=1)
     summary.to_csv(C.OUT_TABLES / "data_universe_by_year.csv")
+    # PERMNOs of the universe: upload this list to WRDS to download the CRSP daily file (README)
+    permnos = sorted(panel["permno"].astype(int).unique())
+    (C.OUT_TABLES / "permnos_rdv_universe.txt").write_text("\n".join(map(str, permnos)) + "\n")
     with open(C.OUT_TABLES / "data_link_method.txt", "w") as f:
         f.write(link_method + "\n")
     print(summary.iloc[::5].round(3).to_string())
