@@ -44,7 +44,7 @@ Main results: `results/tables/results.xlsx` and `results/figures/`.
 | `04_link_and_signal.py` | Compustat↔CRSP link, June universe, RDV score, NYSE quintiles |
 | `05_portfolio_returns.py` | Monthly VW/EW returns of Q1–Q5 and Q5−Q1; quintile characteristics; sector weights |
 | `06_alpha_regressions.py` | 7-model alphas (Newey-West), factor loadings, GRS test, performance statistics |
-| `07_trading_costs.py` | Turnover (Session 3 formula), spread and price-impact costs, net alphas, break-even cost |
+| `07_trading_costs.py` | Turnover (Session 3 formula), spread and price-impact costs, net alphas |
 | `08_figures.py` | Figures for the paper and the presentation |
 | `09_robustness.py` | Sub-periods, size filters, price filter, deciles, breakpoints, winsorisation |
 | `10_fama_macbeth.py` | Fama-MacBeth regressions (score, components, size, momentum) |
@@ -75,7 +75,6 @@ Main results: `results/tables/results.xlsx` and `results/figures/`.
   - Turnover = Σ|w_t − w*_t|, with weights drifting with returns.
   - Cost = |Δw| × half-spread + |Δw| × λ√(trade / ADV), with λ = 2.5 / 1.5 / 1.0 for micro / small / large caps.
   - Half-spreads are measured for every stock-month from the CRSP daily files `Data/crsp_daily_*.csv.gz` (1974–2025): closing quoted spread when the stock has quotes on at least 10 days of the month, otherwise the Abdi-Ranaldo high-low estimator (mainly NYSE/AMEX before 1993, when CRSP has their quotes only on days without trades). A stock-month without a measured spread gets the median of the same NYSE size decile, same month. No extrapolation: step 7 stops if a month of the sample is not covered by the daily files.
-  - The break-even cost needs no assumption.
 
 ## Validation checks (`python tools/validate_pipeline.py`)
 

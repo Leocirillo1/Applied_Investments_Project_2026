@@ -80,7 +80,7 @@ MODELS = {
 
 # ----------------------------------------------------------------------------
 # Trading costs (Session 3). Half-spreads are measured from the CRSP daily files (src/spreads.py);
-# price impact uses the size-group lambdas below. The break-even cost needs no assumption.
+# price impact uses the size-group lambdas below.
 # ----------------------------------------------------------------------------
 TC_LAMBDA = {"micro": 2.5, "small": 1.5, "large": 1.0}                 # 1% of ADV -> 25/15/10 bps
 TC_AUM_USD = 100e6              # per leg, Dec-2025 dollars, scaled back with total market cap

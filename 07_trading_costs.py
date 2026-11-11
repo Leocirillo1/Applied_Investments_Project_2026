@@ -17,9 +17,6 @@ Price impact: lambda depends on the size group, ADV is the previous month's doll
 TC_AUM_USD in Dec-2025 dollars scaled back in time with total CRSP market cap (a fund of constant
 real importance).
 
-Also reported (assumption free): BREAK-EVEN one-way cost = gross alpha / turnover, i.e. the
-cost per dollar traded that would wipe out the alpha.
-
 Outputs: results/tables/trading_costs_RDV_{VW,EW}.csv, half_spreads_by_size_decile.csv,
          permnos_missing_daily.txt, results/processed/net_returns_RDV_{VW,EW}.csv
 """
@@ -203,14 +200,11 @@ def run_one(strat, w, hold, port_col, rets, aum, fac):
     if fac is not None:
         ag = alphas_all_models(t["gross_LS"], fac, idx, excess=False)
         an = alphas_all_models(t["net_LS"], fac, idx, excess=False)
-        turn = t["turnover_LS"].mean()
         for m in C.MODELS:
             a = ag.loc[m, "alpha_pct"]
             summary[f"Gross alpha {m} (%/month)"] = a
             summary[f"Net alpha {m} (%/month)"] = an.loc[m, "alpha_pct"]
             summary[f"t net alpha {m}"] = an.loc[m, "t_alpha"]
-            # cost per dollar traded that wipes out the alpha (only meaningful if alpha > 0)
-            summary[f"Break-even one-way cost {m} (bps)"] = 1e4 * a / 100 / turn if a > 0 else np.nan
     s = pd.Series(summary, name=f"{strat}_{w}")
     s.to_csv(C.OUT_TABLES / f"trading_costs_{strat}_{w}.csv")
     append_sheets(C.OUT_TABLES / "results.xlsx", {f"trading_costs_{w}": s.to_frame()})
