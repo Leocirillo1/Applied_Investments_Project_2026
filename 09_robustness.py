@@ -4,6 +4,7 @@ time; each row re-runs the full sort under ONE alternative design choice:
 
   baseline                    config as in steps 4-5
   1975-1999 / 2000-2025       sub-periods
+  2016-2025 / 2021-2025       last 10 and last 5 years
   no microcaps                drop stocks below the NYSE 20th percentile of June ME
   large caps only             keep June ME >= NYSE median
   price >= $5                 drop low-priced stocks at formation
@@ -50,7 +51,8 @@ def main():
         "no winsorisation": run_spec(crsp, base, winsor=0.0),
     }
     full = common_sample(specs["baseline"]["VW"].dropna().index, fac)
-    periods = {"": full, "1975-1999": full[full <= "1999-12-31"], "2000-2025": full[full >= "2000-01-31"]}
+    periods = {"": full, "1975-1999": full[full <= "1999-12-31"], "2000-2025": full[full >= "2000-01-31"],
+               "2016-2025": full[full >= "2016-01-31"], "2021-2025": full[full >= "2021-01-31"]}
 
     for w in ("VW", "EW"):
         rows = []
