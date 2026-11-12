@@ -8,6 +8,9 @@ characteristics known at the end of June y (momentum: known at the end of month 
   (3) the three z-scored inputs of the score + log(ME) + momentum
 Regressors winsorised 1/99% each month; t-stats from Newey-West standard errors of the monthly
 coefficient series.  Output: results/tables/fama_macbeth_RDV.csv
+Also: 60-month rolling averages of the monthly coefficients of the three inputs in (3), which show
+in which periods each input predicted returns: results/tables/fama_macbeth_rolling.csv and
+results/figures/fig9_rolling_fama_macbeth.png
 """
 import numpy as np
 import pandas as pd
@@ -25,7 +28,7 @@ def momentum(crsp: pd.DataFrame) -> pd.DataFrame:
     return c[["permno", "date", "mom"]]
 
 
-def fm(d: pd.DataFrame, xs: list) -> dict:
+def fm(d: pd.DataFrame, xs: list, keep: dict | None = None) -> dict:
     coefs = []
     for dt, g in d.dropna(subset=xs).groupby("date"):
         if len(g) < 50:
@@ -34,6 +37,8 @@ def fm(d: pd.DataFrame, xs: list) -> dict:
         res = sm.OLS(g["ret"] * 100, sm.add_constant(X)).fit()
         coefs.append(res.params.rename(dt).to_frame().T.assign(adjR2=res.rsquared_adj, n=len(g)))
     cf = pd.concat(coefs)
+    if keep is not None:
+        keep["coefs"] = cf
     col = {}
     for x in ["const"] + xs:
         r = ts_regression(cf[x], pd.DataFrame(index=cf.index), C.NW_LAGS)
@@ -59,11 +64,38 @@ def main():
         "(2) RDV score + size + mom": ["score_RDV", "log_me", "mom"],
         "(3) components + size + mom": ["z_rda", "z_eyr", "z_dopr", "log_me", "mom"],
     }
-    out = pd.DataFrame({name: fm(d, xs) for name, xs in specs.items()})
+    keep = {}
+    out = pd.DataFrame({name: fm(d, xs, keep if name.startswith("(3)") else None) for name, xs in specs.items()})
+    rolling_inputs(keep["coefs"])
     out.to_csv(C.OUT_TABLES / "fama_macbeth_RDV.csv")
     append_sheets(C.OUT_TABLES / "results.xlsx", {"fama_macbeth": out})
     print("Fama-MacBeth: average coefficients (returns in % per month), NW t-stats in parentheses")
     print(out.to_string())
+
+
+def rolling_inputs(cf: pd.DataFrame, win: int = 60) -> None:
+    """60-month rolling average of the monthly Fama-MacBeth coefficients of the three inputs."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    labels = {"z_rda": "R&D / total assets", "z_eyr": "(OIBDP + R&D) / EV", "z_dopr": "Change in profitability"}
+    colors = {"z_rda": "#2a78d6", "z_eyr": "#eb6834", "z_dopr": "#8a8984"}
+    roll = cf[list(labels)].rolling(win).mean().dropna()
+    roll.to_csv(C.OUT_TABLES / "fama_macbeth_rolling.csv", float_format="%.4f")
+    fig, ax = plt.subplots(figsize=(7.5, 3.6))
+    for k, lab in labels.items():
+        ax.plot(roll.index, roll[k], color=colors[k], linewidth=1.6, label=lab)
+    ax.axhline(0, color="#8a8984", linewidth=0.9)
+    ax.set_title(f"RDV inputs: rolling {win}-month average Fama-MacBeth coefficient", loc="left",
+                 fontsize=11, fontweight="bold")
+    ax.set_ylabel("Coefficient (% per month)")
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    ax.grid(True, color="#e6e5e1", linewidth=0.6)
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.08), ncol=3, frameon=False, fontsize=9)
+    fig.savefig(C.OUT_FIGURES / "fig9_rolling_fama_macbeth.png", dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    print("saved fig9_rolling_fama_macbeth.png")
 
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ fig1_cumulative_long_short.png    growth of $1: RDV Q5-Q1 (gross and net of trad
 fig2_cumulative_quintiles_VW.png  growth of $1 in each RDV quintile (VW) and the market
 fig3_mean_excess_returns.png      average monthly excess return by quintile (VW | EW)
 fig4_alpha_by_model.png           Q5-Q1 alpha and 95% CI under the 7 factor models (VW, EW)
-fig5_rolling_alpha.png            60-month rolling FF5+MOM alpha of Q5-Q1 (VW)
+fig5_rolling_alpha.png            60-month rolling FF5+MOM and q5 alphas of Q5-Q1 (VW)
 fig6_universe.png                 number of firms per formation year
 fig7_characteristics.png          the three signal inputs by quintile
 fig8_sector_weights.png           Fama-French 12 sector weights of the long and short legs
@@ -119,20 +119,23 @@ def main():
     ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.1), ncol=2)
     save(fig, "fig4_alpha_by_model.png")
 
-    # 5. rolling alpha
-    fcols = C.MODELS["FF5+MOM"]
+    # 5. rolling alpha (FF5+MOM and q5)
     win = 60
-    roll = []
-    for end in range(win, len(idx) + 1):
-        sub = idx[end - win:end]
-        res = ts_regression(vw.loc[sub, LS], fac.loc[sub, fcols], C.NW_LAGS)
-        roll.append((sub[-1], 100 * res.params["const"]))
-    roll = pd.Series(dict(roll))
     fig, ax = plt.subplots(figsize=(7.5, 3.6))
-    ax.plot(roll, color=BLUE)
+    for model, col in (("FF5+MOM", BLUE), ("q5", ORANGE)):
+        fcols = C.MODELS[model]
+        roll = []
+        for end in range(win, len(idx) + 1):
+            sub = idx[end - win:end]
+            res = ts_regression(vw.loc[sub, LS], fac.loc[sub, fcols], C.NW_LAGS)
+            roll.append((sub[-1], 100 * res.params["const"]))
+        roll = pd.Series(dict(roll))
+        roll.rename(f"alpha_{model}").to_csv(C.OUT_TABLES / f"rolling_alpha_{model.replace('+', '_')}.csv")
+        ax.plot(roll, color=col, label=f"{model} alpha")
     ax.axhline(0, color=GREY, linewidth=0.9)
-    ax.set_title(f"RDV: rolling {win}-month FF5+MOM alpha of {LS} (value-weighted)")
+    ax.set_title(f"RDV: rolling {win}-month alpha of {LS} (value-weighted)")
     ax.set_ylabel("Alpha (% per month)")
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.08), ncol=2)
     save(fig, "fig5_rolling_alpha.png")
 
     # 6. universe

@@ -47,7 +47,7 @@ Main results: `results/tables/results.xlsx` and `results/figures/`.
 | `07_trading_costs.py` | Turnover (Session 3 formula), spread and price-impact costs, net alphas |
 | `08_figures.py` | Figures for the paper and the presentation |
 | `09_robustness.py` | Sub-periods, size filters, price filter, deciles, breakpoints, winsorisation |
-| `10_fama_macbeth.py` | Fama-MacBeth regressions (score, components, size, momentum) |
+| `10_fama_macbeth.py` | Fama-MacBeth regressions (score, components, size, momentum); 60-month rolling coefficients of the three inputs (`fig9_rolling_fama_macbeth.png`) |
 | `src/` | Helpers: I/O, winsorise/z-score, regressions, GRS, portfolio sorts, the RDV signal |
 | `tools/validate_pipeline.py` | Data check: value-weighted return of the cleaned CRSP universe vs the Fama-French market |
 
