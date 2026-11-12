@@ -100,23 +100,23 @@ def max_drawdown(r: pd.Series) -> float:
 
 
 def perf_stats(r: pd.Series, rf: pd.Series | None = None, nw_lags: int = 6) -> dict:
-    """Summary statistics of a monthly return series. If rf is given the Sharpe ratio is
-    computed on excess returns (use rf=None for a zero-investment long-short portfolio)."""
+    """Summary statistics of a monthly return series. If rf is given, ALL statistics use returns in
+    excess of rf (long-only portfolios); use rf=None for a zero-investment long-short portfolio."""
     r = r.dropna()
     ex = r - rf.reindex(r.index) if rf is not None else r
     tstat = ts_regression(ex, pd.DataFrame(index=ex.index), nw_lags).tvalues["const"]
     return {
-        "Mean (%/month)": 100 * r.mean(),
+        "Mean (%/month)": 100 * ex.mean(),
         "t-stat (NW)": tstat,
-        "Ann. mean (%)": 100 * 12 * r.mean(),
-        "Ann. vol (%)": 100 * np.sqrt(12) * r.std(),
+        "Ann. mean (%)": 100 * 12 * ex.mean(),
+        "Ann. vol (%)": 100 * np.sqrt(12) * ex.std(),
         "Sharpe (ann.)": np.sqrt(12) * ex.mean() / ex.std(),
-        "Skewness": stats.skew(r),
-        "Excess kurtosis": stats.kurtosis(r),
-        "Min (%)": 100 * r.min(),
-        "Max (%)": 100 * r.max(),
-        "Max drawdown (%)": 100 * max_drawdown(r),
-        "Months": len(r),
+        "Skewness": stats.skew(ex),
+        "Excess kurtosis": stats.kurtosis(ex),
+        "Min (%)": 100 * ex.min(),
+        "Max (%)": 100 * ex.max(),
+        "Max drawdown (%)": 100 * max_drawdown(ex),
+        "Months": len(ex),
     }
 
 
